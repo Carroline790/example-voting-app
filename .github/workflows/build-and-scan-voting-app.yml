@@ -9,10 +9,6 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-latest
 
-    env:
-      # Use secret if you created SYSDIG_SECURE_URL secret; otherwise hardcode here
-      SYSDIG_SECURE_URL: ${{ secrets.SYSDIG_SECURE_URL }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,78 +16,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      #######################################
-      # Build images for vote, result, worker
-      #######################################
-
       - name: Build vote image
-        run: |
-          docker build \
-            -t vote-app:latest \
-            ./vote
+        run: docker build -t vote-app:latest ./vote
 
-      - name: Build result image
-        run: |
-          docker build \
-            -t result-app:latest \
-            ./result
-
-      - name: Build worker image
-        run: |
-          docker build \
-            -t worker-app:latest \
-            ./worker
-
-      #######################################
-      # Scan vote image with Sysdig
-      #######################################
       - name: Scan vote image with Sysdig
         uses: sysdiglabs/scan-action@v6
         with:
           image-tag: vote-app:latest
           sysdig-secure-token: ${{ secrets.SYSDIG_SECURE_TOKEN }}
-          sysdig-secure-url: ${{ env.SYSDIG_SECURE_URL }}
-          sarif-file: vote-sarif.json
-
-      #######################################
-      # Scan result image with Sysdig
-      #######################################
-      - name: Scan result image with Sysdig
-        uses: sysdiglabs/scan-action@v6
-        with:
-          image-tag: result-app:latest
-          sysdig-secure-token: ${{ secrets.SYSDIG_SECURE_TOKEN }}
-          sysdig-secure-url: ${{ env.SYSDIG_SECURE_URL }}
-          sarif-file: result-sarif.json
-
-      #######################################
-      # Scan worker image with Sysdig
-      #######################################
-      - name: Scan worker image with Sysdig
-        uses: sysdiglabs/scan-action@v6
-        with:
-          image-tag: worker-app:latest
-          sysdig-secure-token: ${{ secrets.SYSDIG_SECURE_TOKEN }}
-          sysdig-secure-url: ${{ env.SYSDIG_SECURE_URL }}
-          sarif-file: worker-sarif.json
-
-      #######################################
-      # Upload SARIF files to GitHub (optional)
-      #######################################
-      - name: Upload vote SARIF
-        if: success() || failure()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: vote-sarif.json
-
-      - name: Upload result SARIF
-        if: success() || failure()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: result-sarif.json
-
-      - name: Upload worker SARIF
-        if: success() || failure()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: worker-sarif.json
+          sysdig-secure-url: ${{ secrets.SYSDIG_SECURE_URL }}
