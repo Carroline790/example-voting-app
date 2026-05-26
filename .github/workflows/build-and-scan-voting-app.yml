@@ -1,0 +1,27 @@
+name: Build and Scan Voting App Images
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build vote image
+        run: docker build -t vote-app:latest ./vote
+
+      - name: Scan vote image with Sysdig
+        uses: sysdiglabs/scan-action@v6
+        with:
+          image-tag: vote-app:latest
+          sysdig-secure-token: ${{ secrets.SYSDIG_SECURE_TOKEN }}
+          sysdig-secure-url: ${{ secrets.SYSDIG_SECURE_URL }}
